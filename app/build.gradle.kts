@@ -96,4 +96,9 @@ dependencies {
     // Google Maps Compose
     implementation ("com.google.maps.android:maps-compose:2.11.4")
     implementation ("com.google.accompanist:accompanist-permissions:0.30.1")
+
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
 }

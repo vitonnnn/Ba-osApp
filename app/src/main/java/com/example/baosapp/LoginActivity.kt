@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import com.example.baosapp.ui.login.LoginScreen
 import com.example.baosapp.ui.theme.BañosAppTheme
 
 class LoginActivity : ComponentActivity() {
+    private val viewModel: LoginViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,6 +28,7 @@ class LoginActivity : ComponentActivity() {
                         .background(MaterialTheme.colorScheme.background)
                 ) {
                     LoginScreen(
+                        viewModel = viewModel,                     // ← aquí pasamos el VM
                         onLoginSuccess = { navigateToMain() }
                     )
                 }
@@ -35,6 +38,6 @@ class LoginActivity : ComponentActivity() {
 
     private fun navigateToMain() {
         startActivity(Intent(this, MainActivity::class.java))
-        finish()  // Evita volver al login con el botón atrás
+        finish()  // evita volver al login
     }
 }

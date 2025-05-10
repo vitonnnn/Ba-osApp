@@ -1,9 +1,8 @@
 package com.example.baosapp.data.result
 
-import com.miempresa.appbanos.data.model.auth.LoginResponse
+import com.appbanos.data.model.auth.LoginResponse
 
-data class ResultLogin(
-    val data: LoginResponse?,
-    val message: String? = null,
-    val code: Int
-)
+sealed class ResultLogin {
+    data class Success(val data: LoginResponse): ResultLogin()
+    data class Error(val message: String, val code: Int?): ResultLogin()
+}

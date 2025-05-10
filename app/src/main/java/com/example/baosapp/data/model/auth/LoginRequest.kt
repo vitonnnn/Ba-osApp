@@ -1,5 +1,5 @@
 // LoginRequest.kt
-package com.miempresa.appbanos.data.model.auth
+package com.appbanos.data.model.auth
 
 data class LoginRequest(
     val username: String,
