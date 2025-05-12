@@ -1,9 +1,9 @@
 package com.example.baosapp
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -15,23 +15,41 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.example.baosapp.data.local.SessionManager
 import com.example.baosapp.navigation.AppNavGraph
-import com.example.baosapp.ui.map.MapScreen
-import com.example.baosapp.ui.map.MapViewModel
 import com.example.baosapp.ui.theme.BañosAppTheme
 
 class MainActivity : ComponentActivity() {
-    private val mapViewModel: MapViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         setContent {
             BañosAppTheme {
                 Scaffold(
-                    topBar = { TopBarView(onClickSignOut = { /* TODO: limpiar sesión */ }) },
-                    bottomBar = { BottomBarView(onClickItem = { /* TODO: manejar pestañas */ }) }
+                    topBar = {
+                        TopBarView(onClickSignOut = {
+                            lifecycleScope.launch {
+                                // Borra el token de sesión
+                                SessionManager.clearToken(this@MainActivity)
+                                // Inicia LoginActivity y limpia el back stack
+                                startActivity(
+                                    Intent(this@MainActivity, LoginActivity::class.java)
+                                        .apply {
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                        }
+                                )
+                                // Cierra MainActivity
+                                finish()
+                            }
+                        })
+                    },
+                    bottomBar = {
+                        BottomBarView(onClickItem = {
+                            // TODO: manejar pestañas si hiciera falta
+                        })
+                    }
                 ) { innerPadding ->
                     Box(
                         modifier = Modifier
@@ -52,9 +70,8 @@ fun TopBarView(onClickSignOut: () -> Unit) {
     var menuExpanded by remember { mutableStateOf(false) }
 
     TopAppBar(
-        title = { Text("BañosApp") },
+        title = { Text("BanosApp") },
         actions = {
-
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(Icons.Default.Settings, contentDescription = "Ajustes")
             }
@@ -79,7 +96,6 @@ fun TopBarView(onClickSignOut: () -> Unit) {
 
 @Composable
 fun BottomBarView(onClickItem: () -> Unit) {
-    // Usamos MaterialTheme.colorScheme.primary para el fondo
     CompositionLocalProvider(
         LocalContentColor provides MaterialTheme.colorScheme.onPrimary
     ) {

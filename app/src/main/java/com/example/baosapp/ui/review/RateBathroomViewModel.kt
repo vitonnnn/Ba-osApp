@@ -3,11 +3,15 @@ package com.example.baosapp.ui.review
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.baosapp.data.model.review.Review
+import com.example.baosapp.data.model.review.ReviewRequest
+import com.example.baosapp.data.remote.ToiletsRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class RateBathroomViewModel : ViewModel() {
+
+    private val repo: ToiletsRepository = ToiletsRepository()
 
     private val _rating = MutableStateFlow(0)
     val rating: StateFlow<Int> = _rating
@@ -51,26 +55,17 @@ class RateBathroomViewModel : ViewModel() {
      * Simula el envío de una reseña.
      * @param nombreBano Nombre del baño a reseñar.
      */
-    fun submitReview(nombreBano: String) {
-        // Validar que haya puntuaciones
-        if (_rating.value == 0 || _limpieza.value == 0 || _olor.value == 0) return
-
+    fun submitReview(toiletId: Long, reviewRequest: ReviewRequest) {
         viewModelScope.launch {
             _isSubmitting.value = true
-            delay(1_000) // Simula llamada a red/repositorio
-
-            // Construir el objeto Review
-            val review = Review(
-                id = System.currentTimeMillis(),
-                nombreBano = nombreBano,
-                valoracion = _rating.value,
-                limpieza   = _limpieza.value,
-                olor       = _olor.value
-            )
-            // TODO: enviar `review` al repositorio
-
-            _isSubmitting.value = false
-            _submissionSuccess.emit(Unit)
+            try {
+                repo.submitReview(toiletId, reviewRequest)
+                _submissionSuccess.emit(Unit)
+            } catch(e: Exception) {
+                // manejar error...
+            } finally {
+                _isSubmitting.value = false
+            }
         }
     }
 }

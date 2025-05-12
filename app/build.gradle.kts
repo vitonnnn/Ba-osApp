@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-parcelize")
+    id("kotlin-kapt")
 }
 
 android {
@@ -100,5 +101,15 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // Moshi core
+    implementation ("com.squareup.moshi:moshi:1.15.0")
+    // Extensiones de Kotlin (para soporte de data classes, nullables, etc)
+    implementation ("com.squareup.moshi:moshi-kotlin:1.15.0")
+    // Procesador de anotaciones para generar adaptadores
+    kapt ("com.squareup.moshi:moshi-kotlin-codegen:1.15.0")
+
+    // Converter de Moshi para Retrofit
+    implementation ("com.squareup.retrofit2:converter-moshi:2.9.0")
 
 }

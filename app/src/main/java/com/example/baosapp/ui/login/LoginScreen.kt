@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.baosapp.data.local.UserPrefs
+import com.example.baosapp.data.local.SessionManager
 import com.example.baosapp.data.result.ResultLogin
 import kotlinx.coroutines.launch
 
@@ -27,21 +27,20 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context      = LocalContext.current
-    val scope        = rememberCoroutineScope()
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    val isLoading    by viewModel.isLoading.observeAsState(false)
-    val result       by viewModel.loginResult.observeAsState()
+    val context   = LocalContext.current
+    val scope     = rememberCoroutineScope()
+    var username  by remember { mutableStateOf("") }
+    var password  by remember { mutableStateOf("") }
+    val isLoading by viewModel.isLoading.observeAsState(false)
+    val result    by viewModel.loginResult.observeAsState()
 
     LaunchedEffect(result) {
         result?.let { res ->
             when (res) {
                 is ResultLogin.Success -> {
-                    // 1) Guardar token en DataStore
+                    // Guarda el token y navega
                     scope.launch {
-                        UserPrefs.saveToken(context, res.data.access_token)
-                        // 2) Navegar tras guardarlo
+                        SessionManager.saveToken(context, res.data.access_token)
                         onLoginSuccess()
                     }
                 }
@@ -119,7 +118,9 @@ fun LoginScreen(
             Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.login(username.trim(), password.trim()) },
+                onClick = {
+                    viewModel.login(username.trim(), password.trim())
+                },
                 enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -130,8 +131,15 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                if (isLoading) CircularProgressIndicator(/*...*/)
-                else Text("Entrar")
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Entrar")
+                }
             }
         }
     }
