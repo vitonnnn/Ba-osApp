@@ -2,6 +2,9 @@ package com.example.baosapp.data.remote
 
 import com.appbanos.data.model.auth.LoginRequest
 import com.appbanos.data.model.auth.LoginResponse
+import com.example.baosapp.data.model.favorite.FavoriteRequest
+import com.example.baosapp.data.model.favorite.FavoriteResponse
+import com.example.baosapp.data.model.favorite.MessageResponse
 import com.example.baosapp.data.model.review.ReviewRequest
 import com.example.baosapp.data.model.review.ReviewResponse
 
@@ -24,4 +27,14 @@ interface ApiService {
         @Path("id") toiletId: Long,
         @Body review: ReviewRequest
     ): Response<ReviewResponse>
+
+
+    @GET("favorites")
+    suspend fun listFavorites(): Response<List<FavoriteResponse>>
+
+    @POST("favorites")
+    suspend fun addFavorite(@Body request: FavoriteRequest): Response<MessageResponse>
+
+    @DELETE("favorites/{toilet_id}")
+    suspend fun removeFavorite(@Path("toilet_id") toiletId: Long): Response<MessageResponse>
 }

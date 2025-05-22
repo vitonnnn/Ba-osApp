@@ -1,42 +1,77 @@
-
-package com.example.baosapp.data.local
+package com.example.baosapp.data.repositories
 
 import android.content.Context
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringSetPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-
-private val Context.dataStore by preferencesDataStore(name = "user_prefs")
-private val FAVORITES_KEY = stringSetPreferencesKey("favorites_ids")
+import com.example.baosapp.data.model.favorite.FavoriteRequest
+import com.example.baosapp.data.model.favorite.FavoriteResponse
+import com.example.baosapp.data.model.toilet.Toilet
+import com.example.baosapp.data.remote.RetrofitClient
 
 /**
- * Repositorio para manejar los baños marcados como favoritos usando DataStore.
+ * Repositorio de favoritos que persiste en el servidor usando Retrofit.
+ * Utiliza Context para construir el ApiService con el interceptor JWT.
  */
 class FavoritesRepository(private val context: Context) {
 
-    /** Flujo con el set de IDs en favoritos */
-    val favoritesFlow: Flow<Set<Long>> = context.dataStore.data
-        .map { prefs ->
-            prefs[FAVORITES_KEY]
-                ?.mapNotNull { it.toLongOrNull() }
-                ?.toSet()
-                ?: emptySet()
-        }
+    private val apiService by lazy { RetrofitClient.create(context) }
 
     /**
-     * Añade o quita [toiletId] de favoritos.
+     * Obtiene del servidor la lista de favoritos del usuario autenticado.
+     * @return Lista de Toilet mapeados desde FavoriteResponse
+     * @throws RuntimeException si la respuesta no es exitosa (excepto 422)
      */
-    suspend fun toggleFavorite(toiletId: Long) {
-        context.dataStore.edit { prefs ->
-            val current = prefs[FAVORITES_KEY] ?: emptySet()
-            val strId = toiletId.toString()
-            prefs[FAVORITES_KEY] = if (current.contains(strId)) {
-                current - strId
-            } else {
-                current + strId
-            }
+    suspend fun getFavorites(): List<Toilet> {
+        val resp = apiService.listFavorites()
+        if (!resp.isSuccessful) {
+            throw RuntimeException("Error fetching favorites: ${resp.code()}")
         }
+        return resp.body()
+            .orEmpty()
+            .map { fr: FavoriteResponse ->
+                Toilet(
+                    id         = fr.id,
+                    name       = fr.name,
+                    latitude   = fr.latitude,
+                    longitude  = fr.longitude,
+                    avgRating  = fr.avgRating,
+                    accesible   = false,
+                    publico     = false,
+                    mixto       = false,
+                    cambioBebes = false
+                )
+            }
+    }
+
+    /**
+     * Añade un favorito en el servidor.
+     * Ignora HTTP 409 (Conflict) y 422 (Unprocessable Entity) como no-op.
+     */
+    suspend fun addFavorite(toiletId: Long) {
+        val resp = apiService.addFavorite(FavoriteRequest(toiletId))
+        if (resp.isSuccessful) return
+        when (resp.code()) {
+            409, 422 -> return
+            else -> throw RuntimeException("Error añadiendo favorito: ${resp.code()}")
+        }
+    }
+
+    /**
+     * Elimina un favorito del servidor.
+     * Ignora HTTP 404 (Not Found) como no-op.
+     */
+    suspend fun removeFavorite(toiletId: Long) {
+        val resp = apiService.removeFavorite(toiletId)
+        if (resp.isSuccessful) return
+        when (resp.code()) {
+            404 -> return
+            else -> throw RuntimeException("Error eliminando favorito: ${resp.code()}")
+        }
+    }
+
+    /**
+     * Alterna el estado de favorito para un Toilet dado.
+     */
+    suspend fun toggleFavorite(toilet: Toilet, currentlyFavorite: Boolean) {
+        if (currentlyFavorite) removeFavorite(toilet.id)
+        else addFavorite(toilet.id)
     }
 }

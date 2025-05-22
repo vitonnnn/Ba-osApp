@@ -2,53 +2,54 @@
 package com.example.baosapp.ui.favorites
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.baosapp.data.local.FavoritesRepository
-
 import com.example.baosapp.data.model.toilet.Toilet
-import com.example.baosapp.data.remote.ToiletsRepository
+import com.example.baosapp.data.repositories.FavoritesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel para la pantalla de favoritos.
- * Combina el flujo de IDs favoritos con la lista completa de baños.
- */
+
+
 class FavoritesViewModel(
-    private val favoritesRepo: FavoritesRepository,
-    private val toiletRepo: ToiletsRepository
+    private val repo: FavoritesRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(FavoritesUiState())
+    private val _uiState = MutableStateFlow(FavoritesUiState(isLoading = true))
     val uiState: StateFlow<FavoritesUiState> = _uiState
 
     init {
-        viewModelScope.launch {
-            // 1) Carga la lista completa de baños (suspend)
-            val allToilets = toiletRepo.getAllToilets()
+        loadFavorites()
+    }
 
-            // 2) Cada vez que cambian los favoritos, filtra la lista
-            favoritesRepo.favoritesFlow
-                .map { favIds ->
-                    FavoritesUiState(
-                        toilets      = allToilets.filter { it.id in favIds },
-                        favorites    = favIds,
-                        isLoading    = false,
-                        errorMessage = null
-                    )
-                }
-                .collect { state ->
-                    _uiState.value = state
-                }
+    private fun loadFavorites() {
+        viewModelScope.launch {
+            _uiState.value = FavoritesUiState(isLoading = true)
+            try {
+                val list = repo.getFavorites()
+                _uiState.value = FavoritesUiState(toilets = list, isLoading = false)
+            } catch (e: Exception) {
+                _uiState.value = FavoritesUiState(
+                    toilets      = emptyList(),
+                    isLoading    = false,
+                    errorMessage = e.message
+                )
+            }
         }
     }
 
-    /** Alterna el estado de favorito de un baño */
     fun onToggleFavorite(toilet: Toilet) {
         viewModelScope.launch {
-            favoritesRepo.toggleFavorite(toilet.id)
+            try {
+                // borra en servidor
+                repo.toggleFavorite(toilet, currentlyFavorite = true)
+                // filtramos de la lista local
+                val updated = _uiState.value.toilets.filterNot { it.id == toilet.id }
+                _uiState.value = _uiState.value.copy(toilets = updated)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(errorMessage = e.message)
+            }
         }
     }
 }

@@ -1,25 +1,40 @@
+// app/src/main/java/com/example/baosapp/data/repositories/AuthRepository.kt
 package com.example.baosapp.data.repositories
 
-import com.example.baosapp.data.result.ResultLogin
+import android.content.Context
 import com.appbanos.data.model.auth.LoginRequest
 import com.example.baosapp.data.remote.RetrofitClient
+import com.example.baosapp.data.result.ResultLogin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AuthRepository {
+class AuthRepository(private val context: Context) {
+
+    // Construimos el ApiService ON-DEMAND usando el contexto
+    private val apiService by lazy { RetrofitClient.create(context) }
+
     suspend fun login(username: String, password: String): ResultLogin =
         withContext(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.apiService.login(LoginRequest(username, password))
+                val response = apiService.login(LoginRequest(username, password))
                 if (response.isSuccessful) {
                     response.body()?.let { body ->
                         ResultLogin.Success(body)
-                    } ?: ResultLogin.Error("Respuesta vacía", response.code())
+                    } ?: ResultLogin.Error(
+                        message = "Respuesta vacía",
+                        code    = response.code()
+                    )
                 } else {
-                    ResultLogin.Error(response.message(), response.code())
+                    ResultLogin.Error(
+                        message = response.message(),
+                        code    = response.code()
+                    )
                 }
             } catch (e: Exception) {
-                ResultLogin.Error(e.localizedMessage ?: "Error de red", null)
+                ResultLogin.Error(
+                    message = e.localizedMessage ?: "Error de red",
+                    code    = null
+                )
             }
         }
 }

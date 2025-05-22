@@ -1,19 +1,21 @@
 // app/src/main/java/com/example/baosapp/ui/login/LoginViewModel.kt
 package com.example.baosapp.ui.login
 
-// app/src/main/java/com/example/baosapp/ui/login/LoginViewModel.kt
-
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.baosapp.data.repositories.AuthRepository
 import com.example.baosapp.data.result.ResultLogin
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
-) : ViewModel() {
+    application: Application
+) : AndroidViewModel(application) {
+
+    // Ahora usa directamente el Application como Context
+    private val authRepository = AuthRepository(application)
 
     private val _loginResult = MutableLiveData<ResultLogin>()
     val loginResult: LiveData<ResultLogin> = _loginResult

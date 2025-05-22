@@ -17,8 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import androidx.navigation.compose.rememberNavController                     // ← importar
+import androidx.navigation.NavHostController                              // ← importar
 import com.example.baosapp.data.local.SessionManager
 import com.example.baosapp.navigation.AppNavGraph
+import com.example.baosapp.navigation.Destinations                        // ← importar tus constantes de ruta
 import com.example.baosapp.ui.theme.BañosAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,28 +30,37 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BañosAppTheme {
+                // Creamos el NavController una sola vez
+                val navController = rememberNavController()
+
                 Scaffold(
                     topBar = {
                         TopBarView(onClickSignOut = {
                             lifecycleScope.launch {
-                                // Borra el token de sesión
                                 SessionManager.clearToken(this@MainActivity)
-                                // Inicia LoginActivity y limpia el back stack
                                 startActivity(
                                     Intent(this@MainActivity, LoginActivity::class.java)
                                         .apply {
                                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         }
                                 )
-                                // Cierra MainActivity
                                 finish()
                             }
                         })
                     },
                     bottomBar = {
-                        BottomBarView(onClickItem = {
-                            // TODO: manejar pestañas si hiciera falta
-                        })
+                        BottomBarView(
+                            onMapClick = {
+                                navController.navigate(Destinations.MAP)
+                            },
+                            onAddClick = {
+                                // si tienes ruta para "añadir baño", por ejemplo:
+                                // navController.navigate(Destinations.ADD_BATHROOM)
+                            },
+                            onFavoritesClick = {
+                                navController.navigate(Destinations.FAVORITES)
+                            }
+                        )
                     }
                 ) { innerPadding ->
                     Box(
@@ -56,7 +68,8 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-                        AppNavGraph()
+                        // Le pasamos el controller a nuestro NavGraph
+                        AppNavGraph(navController = navController)
                     }
                 }
             }
@@ -95,7 +108,11 @@ fun TopBarView(onClickSignOut: () -> Unit) {
 }
 
 @Composable
-fun BottomBarView(onClickItem: () -> Unit) {
+fun BottomBarView(
+    onMapClick: () -> Unit,
+    onAddClick: () -> Unit,
+    onFavoritesClick: () -> Unit
+) {
     CompositionLocalProvider(
         LocalContentColor provides MaterialTheme.colorScheme.onPrimary
     ) {
@@ -106,14 +123,14 @@ fun BottomBarView(onClickItem: () -> Unit) {
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = onClickItem) {
+            IconButton(onClick = onMapClick) {
                 Icon(Icons.Default.Place, contentDescription = "Mapa")
             }
-            IconButton(onClick = onClickItem) {
+            IconButton(onClick = onAddClick) {
                 Icon(Icons.Default.Add, contentDescription = "Añadir baño")
             }
-            IconButton(onClick = onClickItem) {
-                Icon(Icons.Default.Star, contentDescription = "Reseñas")
+            IconButton(onClick = onFavoritesClick) {
+                Icon(Icons.Default.Star, contentDescription = "Favoritos")
             }
         }
     }

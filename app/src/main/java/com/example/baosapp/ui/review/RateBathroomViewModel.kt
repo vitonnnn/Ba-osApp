@@ -1,17 +1,19 @@
+// app/src/main/java/com/example/baosapp/ui/review/RateBathroomViewModel.kt
 package com.example.baosapp.ui.review
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.baosapp.data.model.review.Review
 import com.example.baosapp.data.model.review.ReviewRequest
-import com.example.baosapp.data.remote.ToiletsRepository
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import com.example.baosapp.data.repositories.ToiletRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class RateBathroomViewModel : ViewModel() {
-
-    private val repo: ToiletsRepository = ToiletsRepository()
+class RateBathroomViewModel(
+    private val repo: ToiletRepository
+) : ViewModel() {
 
     private val _rating = MutableStateFlow(0)
     val rating: StateFlow<Int> = _rating
@@ -31,38 +33,21 @@ class RateBathroomViewModel : ViewModel() {
     private val _submissionSuccess = MutableSharedFlow<Unit>()
     val submissionSuccess: SharedFlow<Unit> = _submissionSuccess
 
-    /** Establece la valoración global (1..5) */
-    fun setRating(value: Int) {
-        if (value in 1..5) _rating.value = value
-    }
+    fun setRating(value: Int) { if (value in 1..5) _rating.value = value }
+    fun setLimpieza(value: Int) { if (value in 1..5) _limpieza.value = value }
+    fun setOlor(value: Int)     { if (value in 1..5) _olor.value = value }
+    fun setComment(text: String){ _comment.value = text }
 
-    /** Establece la limpieza (1..5) */
-    fun setLimpieza(value: Int) {
-        if (value in 1..5) _limpieza.value = value
-    }
+    fun submitReview(toiletId: Long) {
+        if (_rating.value == 0 || _limpieza.value == 0 || _olor.value == 0) return
 
-    /** Establece el olor (1..5) */
-    fun setOlor(value: Int) {
-        if (value in 1..5) _olor.value = value
-    }
-
-    /** Establece el comentario */
-    fun setComment(text: String) {
-        _comment.value = text
-    }
-
-    /**
-     * Simula el envío de una reseña.
-     * @param nombreBano Nombre del baño a reseñar.
-     */
-    fun submitReview(toiletId: Long, reviewRequest: ReviewRequest) {
         viewModelScope.launch {
             _isSubmitting.value = true
             try {
-                repo.submitReview(toiletId, reviewRequest)
+                repo.submitReview(toiletId, review)
                 _submissionSuccess.emit(Unit)
-            } catch(e: Exception) {
-                // manejar error...
+            } catch (e: Exception) {
+                // aquí podrías exponer otro flujo de error
             } finally {
                 _isSubmitting.value = false
             }

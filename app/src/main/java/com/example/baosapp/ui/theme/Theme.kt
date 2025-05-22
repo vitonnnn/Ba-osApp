@@ -13,6 +13,7 @@ private val LightColorScheme = lightColorScheme(
     onSecondary = AccentCream,
     onBackground= AccentCream,
     onSurface = DarkBlue
+
 )
 
 @Composable
