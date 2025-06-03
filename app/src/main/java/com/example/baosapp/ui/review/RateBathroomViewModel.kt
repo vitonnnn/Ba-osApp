@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/baosapp/ui/review/RateBathroomViewModel.kt
 package com.example.baosapp.ui.review
 
 import androidx.lifecycle.ViewModel
@@ -11,6 +10,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel para manejar la lógica de envío de reseñas.
+ */
 class RateBathroomViewModel(
     private val repo: ToiletRepository
 ) : ViewModel() {
@@ -33,21 +35,35 @@ class RateBathroomViewModel(
     private val _submissionSuccess = MutableSharedFlow<Unit>()
     val submissionSuccess: SharedFlow<Unit> = _submissionSuccess
 
-    fun setRating(value: Int) { if (value in 1..5) _rating.value = value }
-    fun setLimpieza(value: Int) { if (value in 1..5) _limpieza.value = value }
-    fun setOlor(value: Int)     { if (value in 1..5) _olor.value = value }
-    fun setComment(text: String){ _comment.value = text }
+    fun setRating(value: Int) {
+        if (value in 1..5) _rating.value = value
+    }
 
-    fun submitReview(toiletId: Long) {
-        if (_rating.value == 0 || _limpieza.value == 0 || _olor.value == 0) return
+    fun setLimpieza(value: Int) {
+        if (value in 1..5) _limpieza.value = value
+    }
 
+    fun setOlor(value: Int) {
+        if (value in 1..5) _olor.value = value
+    }
+
+    fun setComment(text: String) {
+        _comment.value = text
+    }
+
+    /**
+     * Envía una reseña al servidor usando un ReviewRequest.
+     * @param toiletId Id del baño a reseñar.
+     * @param review    Request que contiene rating, limpieza, olor y comentario.
+     */
+    fun submitReview(toiletId: Long, review: ReviewRequest) {
         viewModelScope.launch {
             _isSubmitting.value = true
             try {
                 repo.submitReview(toiletId, review)
                 _submissionSuccess.emit(Unit)
             } catch (e: Exception) {
-                // aquí podrías exponer otro flujo de error
+                // manejar error si lo deseas
             } finally {
                 _isSubmitting.value = false
             }

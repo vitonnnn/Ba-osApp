@@ -2,6 +2,8 @@ package com.example.baosapp.data.remote
 
 import com.appbanos.data.model.auth.LoginRequest
 import com.appbanos.data.model.auth.LoginResponse
+import com.example.baosapp.data.model.auth.RegisterRequest
+import com.example.baosapp.data.model.auth.RegisterResponse
 import com.example.baosapp.data.model.favorite.FavoriteRequest
 import com.example.baosapp.data.model.favorite.FavoriteResponse
 import com.example.baosapp.data.model.favorite.MessageResponse
@@ -15,6 +17,10 @@ import retrofit2.http.*
 interface ApiService {
     @POST("users/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
+
+    @POST("users")
+    suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
+
 
     @GET("toilets")
     suspend fun listToilets(): Response<List<Toilet>>

@@ -44,7 +44,7 @@ fun ToiletItem(
                     Icon(
                         imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.Star,
                         contentDescription = if (isFavorite) "Quitar de favoritos" else "Añadir a favoritos",
-                        tint = if (isFavorite) Color(0xFFADD8E6) else Color.Yellow
+                        tint = if (isFavorite) Color(0xFFECEFCA) else Color.Gray
                     )
                 }
                 IconButton(onClick = { onLocateClick(toilet) }) {

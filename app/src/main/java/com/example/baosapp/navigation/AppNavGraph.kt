@@ -24,6 +24,8 @@ import com.example.baosapp.ui.favorites.FavoritesViewModelFactory
 import com.example.baosapp.ui.review.RateBathroomScreen
 import com.example.baosapp.ui.review.RateBathroomViewModel
 import com.example.baosapp.ui.information.InformationScreen
+import com.example.baosapp.ui.login.RegisterScreen
+import com.example.baosapp.ui.login.RegisterViewModel
 import com.example.baosapp.ui.map.MapViewModelFactory
 import com.example.baosapp.ui.review.RateBathroomViewModelFactory
 import com.example.baosapp.ui.shared.SharedToiletViewModel
@@ -57,11 +59,27 @@ fun AppNavGraph(
         composable(Destinations.LOGIN) {
             val loginVm: LoginViewModel = viewModel()
             LoginScreen(
-                viewModel      = loginVm,
-                onLoginSuccess = {
+                viewModel            = loginVm,
+                onLoginSuccess       = {
                     navController.navigate(Destinations.MAP) {
                         popUpTo(Destinations.LOGIN) { inclusive = true }
                     }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Destinations.REGISTER)
+                }
+            )
+        }
+        composable(Destinations.REGISTER) {
+            val registerVm: RegisterViewModel = viewModel()
+            RegisterScreen(
+                viewModel         = registerVm,
+                onRegisterSuccess = {
+                    // tras registro volvemos a LOGIN
+                    navController.popBackStack(Destinations.LOGIN, false)
+                },
+                onBackToLogin     = {
+                    navController.popBackStack()
                 }
             )
         }

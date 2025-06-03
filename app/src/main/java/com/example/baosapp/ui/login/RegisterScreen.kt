@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/baosapp/ui/login/LoginScreen.kt
 package com.example.baosapp.ui.login
 
 import android.widget.Toast
@@ -16,41 +15,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.baosapp.data.local.SessionManager
-import com.example.baosapp.data.result.ResultLogin
-import kotlinx.coroutines.launch
+import com.example.baosapp.data.model.auth.ResultRegister
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    viewModel: LoginViewModel,
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit,
+fun RegisterScreen(
+    viewModel: RegisterViewModel,
+    onRegisterSuccess: () -> Unit,
+    onBackToLogin: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context   = LocalContext.current
-    val scope     = rememberCoroutineScope()
-    var username  by remember { mutableStateOf("") }
-    var password  by remember { mutableStateOf("") }
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val result    by viewModel.loginResult.observeAsState()
+    val context    = LocalContext.current
+    val scope      = rememberCoroutineScope()
+    var username   by remember { mutableStateOf("") }
+    var email      by remember { mutableStateOf("") }
+    var password   by remember { mutableStateOf("") }
+    val isLoading  by viewModel.isLoading.observeAsState(false)
+    val result     by viewModel.registerResult.observeAsState()
+
+    // Validación de email: debe contener '@' y '.com'
+    val emailValid = remember(email) { email.contains("@") && email.contains(".com") }
 
     LaunchedEffect(result) {
         result?.let { res ->
             when (res) {
-                is ResultLogin.Success -> {
-                    // Guarda el token y navega
-                    scope.launch {
-                        SessionManager.saveToken(context, res.data.access_token)
-                        onLoginSuccess()
-                    }
+                is ResultRegister.Success -> {
+                    Toast.makeText(context, "Usuario creado: ${res.data.username}", Toast.LENGTH_LONG).show()
+                    onRegisterSuccess()
                 }
-                is ResultLogin.Error -> {
-                    Toast.makeText(
-                        context,
-                        "Error (${res.code}): ${res.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                is ResultRegister.Error -> {
+                    Toast.makeText(context, "Error (${res.code}): ${res.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -61,9 +55,8 @@ fun LoginScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Texto de bienvenida
         Text(
-            text = "¡Bienvenido!",
+            text = "Crear cuenta",
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -72,7 +65,6 @@ fun LoginScreen(
                 .padding(top = 64.dp)
         )
 
-        // Contenedor inferior con formulario
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -81,7 +73,8 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.secondary,
                     shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                 )
-                .padding(24.dp)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
                 value = username,
@@ -98,7 +91,29 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Correo electrónico") },
+                singleLine = true,
+                isError = email.isNotBlank() && !emailValid,
+                colors = outlinedTextFieldColors(
+                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.onSecondary,
+                    cursorColor          = MaterialTheme.colorScheme.onSecondary,
+                    containerColor       = MaterialTheme.colorScheme.background.copy(alpha = 0.1f)
+                ),
+                shape = RoundedCornerShape(50),
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (email.isNotBlank() && !emailValid) {
+                Text(
+                    text = "Correo inválido",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+            }
 
             OutlinedTextField(
                 value = password,
@@ -116,13 +131,10 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(Modifier.height(24.dp))
-
+            Spacer(Modifier.height(8.dp))
             Button(
-                onClick = {
-                    viewModel.login(username.trim(), password.trim())
-                },
-                enabled = !isLoading,
+                onClick = { viewModel.register(username.trim(), password.trim(), email.trim()) },
+                enabled = username.isNotBlank() && password.isNotBlank() && emailValid && !isLoading,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor   = MaterialTheme.colorScheme.onPrimary
@@ -139,16 +151,16 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Entrar")
+                    Text("Registrarse")
                 }
             }
+
             TextButton(
-                onClick = onNavigateToRegister,
+                onClick = onBackToLogin,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("¿No tienes cuenta? Regístrate")
+                Text("< Volver al login")
             }
-
         }
     }
 }
