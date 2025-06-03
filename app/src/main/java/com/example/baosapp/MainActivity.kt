@@ -54,8 +54,7 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate(Destinations.MAP)
                             },
                             onAddClick = {
-                                // si tienes ruta para "añadir baño", por ejemplo:
-                                // navController.navigate(Destinations.ADD_BATHROOM)
+                               navController.navigate(Destinations.CREATE)
                             },
                             onFavoritesClick = {
                                 navController.navigate(Destinations.FAVORITES)

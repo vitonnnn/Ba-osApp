@@ -7,4 +7,5 @@ object Destinations {
     const val REGISTER        = "register"
     const val RATE_BATHROOM = "rateBathroom"
     const val INFORMATION    = "information"
+    const val CREATE = "create"
 }

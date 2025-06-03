@@ -1,6 +1,7 @@
 // app/src/main/java/com/example/baosapp/navigation/AppNavGraph.kt
 package com.example.baosapp.navigation
 
+import android.app.Application
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -14,6 +15,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.baosapp.data.local.SessionManager
 import com.example.baosapp.data.repositories.FavoritesRepository
+import com.example.baosapp.ui.create.CreateToiletScreen
+import com.example.baosapp.ui.create.CreateToiletViewModel
+import com.example.baosapp.ui.create.CreateToiletViewModelFactory
 import com.example.baosapp.ui.login.LoginScreen
 import com.example.baosapp.ui.login.LoginViewModel
 import com.example.baosapp.ui.map.MapScreen
@@ -29,7 +33,6 @@ import com.example.baosapp.ui.login.RegisterViewModel
 import com.example.baosapp.ui.map.MapViewModelFactory
 import com.example.baosapp.ui.review.RateBathroomViewModelFactory
 import com.example.baosapp.ui.shared.SharedToiletViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavGraph(
@@ -154,5 +157,24 @@ fun AppNavGraph(
             val selectedToilet by sharedVM.selectedToilet.collectAsState(initial = null)
             InformationScreen(toilet = selectedToilet)
         }
+
+        composable(Destinations.CREATE) {
+            val factory = CreateToiletViewModelFactory(LocalContext.current)
+            val createVm: CreateToiletViewModel = viewModel(factory = factory)
+
+            CreateToiletScreen(
+                viewModel = createVm,
+                onCreated = {
+                    // Por ejemplo, volvemos atrás en el NavStack:
+                    navController.popBackStack()
+                },
+                onCloseSheet = {
+                    // Como la pantalla no es realmente un sheet aquí,
+                    // podrías simplemente volver al MAP:
+                    navController.popBackStack()
+                }
+            )
+        }
+
     }
 }

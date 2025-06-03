@@ -13,8 +13,7 @@ import kotlinx.coroutines.launch
 
 
 class FavoritesViewModel(
-    private val repo: FavoritesRepository
-) : ViewModel() {
+    private val repo: FavoritesRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FavoritesUiState(isLoading = true))
     val uiState: StateFlow<FavoritesUiState> = _uiState
