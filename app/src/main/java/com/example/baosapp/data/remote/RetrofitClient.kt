@@ -11,14 +11,13 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-// RetrofitClient.kt
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.40:5000/"
+    private const val BASE_URL = "http://192.168.1.50:5000/"
 
     fun create(context: Context): ApiService {
         // Interceptor que añade el JWT en Authorization
         val authInterceptor = Interceptor { chain ->
-            // se bloquea brevemente para obtener el token
+            // Se bloquea brevemente para obtener el token
             val token = runBlocking {
                 SessionManager.getToken(context).first()
             }
@@ -43,10 +42,8 @@ object RetrofitClient {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(client)
-
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
     }
 }
-

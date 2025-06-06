@@ -30,10 +30,11 @@ class InformationViewModel(
             try {
                 val listResponse: List<ReviewResponse> = repo.getReviews(toiletId)
 
-                // Mapeamos ReviewResponse -> ReviewUiModel (ahora createdAt es String? )
+                // Mapeamos ReviewResponse -> ReviewUiModel (ahora incluimos username)
                 val uiList: List<ReviewUiModel> = listResponse.map { review ->
                     ReviewUiModel(
                         id = review.id,
+                        username = review.username,   // <-- Asignamos el username
                         valoracion = review.valoracion,
                         limpieza = review.limpieza,
                         olor = review.olor,

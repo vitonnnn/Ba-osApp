@@ -10,7 +10,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+
 
 @Composable
 fun ReviewItem(uiModel: ReviewUiModel) {
@@ -21,10 +23,17 @@ fun ReviewItem(uiModel: ReviewUiModel) {
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
+            // Mostrar el nombre de usuario en primera línea (por ejemplo, en negrita o con estilo)
+            Text(
+                text = uiModel.username,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
+
             // Línea con estrellas, limpieza y olor
             Text(
                 text = "★ ${uiModel.valoracion}   🧼 ${uiModel.limpieza}   👃 ${uiModel.olor}",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp)
             )
 
             // Comentario
@@ -34,14 +43,9 @@ fun ReviewItem(uiModel: ReviewUiModel) {
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            // Fecha/hora: si es null, mostramos “–” o cadena vacía
-            val fechaText = uiModel.createdAt?.replace('T', ' ') ?: "–"
-            Text(
-                text = fechaText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            // Fecha/hora: si es null, mostramos “–”
+
         }
     }
 }
+

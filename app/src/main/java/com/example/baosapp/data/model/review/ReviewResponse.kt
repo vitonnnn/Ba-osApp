@@ -9,6 +9,9 @@ data class ReviewResponse(
     @Json(name = "user_id")
     val userId: Long,
 
+    // <-- Nuevo campo para el nombre de usuario
+    val username: String,
+
     val valoracion: Int,
     val limpieza: Int,
     val olor: Int,

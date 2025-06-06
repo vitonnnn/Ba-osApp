@@ -53,10 +53,8 @@ fun ToiletItem(
                         contentDescription = "Localizar baño"
                     )
                 }
-                Text(
-                    text = "${"%.1f".format(toilet.avgRating)} ★",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text("${"%.1f".format(toilet.avgRating)} ★", style = MaterialTheme.typography.bodyMedium)
+
             }
         }
 

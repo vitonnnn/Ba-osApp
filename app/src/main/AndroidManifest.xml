@@ -34,7 +34,7 @@
             android:exported="false"
             android:theme="@style/Theme.BanosApp"/>
 
-        <!-- 3) MainActivity: ya logueado, aquí va TODO el NavHost -->
+        <!-- 3) MainActivity: ya logueado, aquí va  -->
         <activity
             android:name=".MainActivity"
             android:exported="false"
@@ -45,5 +45,8 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_api_key"/>
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
     </application>
 </manifest>

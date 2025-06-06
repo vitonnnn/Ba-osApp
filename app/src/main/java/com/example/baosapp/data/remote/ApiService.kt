@@ -40,6 +40,18 @@ interface ApiService {
     @GET("toilets/{id}")
     suspend fun getToilet(@Path("id") id: Long): Response<Toilet>
 
+    @GET("toilets/nearby")
+    suspend fun listNearbyToilets(
+        @Query("lat") lat: Double,
+        @Query("lon") lon: Double,
+        @Query("radius") radius: Double,
+        @Query("mixto") mixto: Boolean? = null,
+        @Query("accesible") accesible: Boolean? = null,
+        @Query("publico") publico: Boolean? = null,
+        @Query("cambio_bebes") cambioBebes: Boolean? = null,
+        @Query("sort") sort: String = "desc"
+    ): Response<List<Toilet>>
+
     @POST("toilets/{id}/reviews")
     suspend fun postReview(
         @Path("id") toiletId: Long,
@@ -60,5 +72,23 @@ interface ApiService {
     @DELETE("favorites/{toilet_id}")
     suspend fun removeFavorite(@Path("toilet_id") toiletId: Long): Response<MessageResponse>
 
+    @GET("toilets/my")
+    suspend fun getMyToilets(): Response<List<Toilet>>
 
+    // 2) Borrar un baño (solo propietario)
+    @DELETE("toilets/{id}")
+    suspend fun deleteToilet(
+        @Path("id") toiletId: Long
+    ): Response<Void>
+
+    // 3) “Mis reseñas”
+    @GET("reviews/my")
+    suspend fun getMyReviews(): Response<List<ReviewResponse>>
+
+    // 4) Borrar reseña (requiere Authorization)
+    @DELETE("toilets/{t_id}/reviews/{r_id}")
+    suspend fun deleteReview(
+        @Path("t_id") toiletId: Long,
+        @Path("r_id") reviewId: Long
+    ): Response<Void>
 }

@@ -69,4 +69,18 @@ class ToiletRepository(
             throw HttpException(resp)
         }
     }
+    suspend fun getNearbyToilets(
+        lat: Double,
+        lon: Double,
+        radius: Double,
+        mixto: Boolean?,
+        accesible: Boolean?,
+        publico: Boolean?,
+        cambioBebes: Boolean?,
+        sort: String
+    ): List<Toilet> = withContext(Dispatchers.IO) {
+        val resp = apiService.listNearbyToilets(lat, lon, radius, mixto, accesible, publico, cambioBebes, sort)
+        if (resp.isSuccessful) return@withContext resp.body() ?: emptyList()
+        throw HttpException(resp)
+    }
 }

@@ -1,6 +1,7 @@
 // app/src/main/java/com/example/baosapp/ui/information/InformationScreen.kt
 package com.example.baosapp.ui.information
 
+import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +19,7 @@ fun InformationScreen(
     toilet: Toilet?,
     modifier: Modifier = Modifier
 ) {
+    // Si no se ha seleccionado ningún baño, mostramos un mensaje y salimos
     if (toilet == null) {
         Column(
             modifier = modifier
@@ -34,25 +36,24 @@ fun InformationScreen(
         return
     }
 
-    // Crear ViewModel con Factory
-    val context = LocalContext.current.applicationContext as android.app.Application
-    val factory = InformationViewModelFactory(app = context, toiletId = toilet.id)
-    val infoVm: InformationViewModel = viewModel(factory = factory)
+    // Obtenemos el ViewModel pasándole el toilet.id como parámetro
+    val context = LocalContext.current
+    val viewModel: InformationViewModel = viewModel(
+        factory = InformationViewModelFactory(
+            context.applicationContext as Application,
+            toilet.id
+        )
+    )
 
-    // Observar uiState
-    val uiState by infoVm.uiState.collectAsState()
+    // Observamos el estado UI desde el ViewModel
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(16.dp)
     ) {
-        // ----- Información estática del baño -----
-        Text(
-            text = "Información del baño",
-            style = MaterialTheme.typography.titleLarge
-        )
+        // Información básica del baño
         Text(
             text = "• Nombre: ${toilet.name}",
             style = MaterialTheme.typography.bodyMedium
@@ -74,17 +75,20 @@ fun InformationScreen(
             style = MaterialTheme.typography.bodyMedium
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // ----- Encabezado “Reseñas” -----
+        // Título de la sección de reseñas
         Text(
-            text = "Reseñas",
-            style = MaterialTheme.typography.headlineSmall
+            text = "Reseñas:",
+            style = MaterialTheme.typography.titleMedium
         )
 
-        // ----- Contenido dinámico de reseñas -----
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Mostramos estado de carga, error o lista de reseñas
         when {
             uiState.isLoading -> {
+                // Indicador de carga centrado
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -94,20 +98,40 @@ fun InformationScreen(
                     CircularProgressIndicator()
                 }
             }
+
             uiState.errorMessage != null -> {
-                Text(
-                    text = "Error al cargar reseñas: ${uiState.errorMessage}",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // Mostrar mensaje de error
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = uiState.errorMessage.orEmpty(),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
+
             uiState.reviews.isEmpty() -> {
-                Text(
-                    text = "No hay reseñas para este baño.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                // No hay reseñas aún
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Aún no hay reseñas para este baño.",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
+
             else -> {
+                // Lista de reseñas
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()

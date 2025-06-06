@@ -22,7 +22,7 @@ fun BañosAppTheme(
 ) {
     MaterialTheme(
         colorScheme = LightColorScheme,
-        typography = Typography,     // si ya tienes tu Typography definido
+        typography = AppTypography,     // si ya tienes tu Typography definido
         content = content
     )
 }

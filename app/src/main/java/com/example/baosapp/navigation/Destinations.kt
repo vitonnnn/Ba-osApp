@@ -8,4 +8,5 @@ object Destinations {
     const val RATE_BATHROOM = "rateBathroom"
     const val INFORMATION    = "information"
     const val CREATE = "create"
+    const val FILTER = "filter"
 }

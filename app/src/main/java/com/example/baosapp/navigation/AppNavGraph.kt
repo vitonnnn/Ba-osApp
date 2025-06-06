@@ -3,67 +3,69 @@ package com.example.baosapp.navigation
 
 import android.app.Application
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.baosapp.data.local.SessionManager
-import com.example.baosapp.data.repositories.FavoritesRepository
 import com.example.baosapp.ui.create.CreateToiletScreen
 import com.example.baosapp.ui.create.CreateToiletViewModel
 import com.example.baosapp.ui.create.CreateToiletViewModelFactory
-import com.example.baosapp.ui.login.LoginScreen
-import com.example.baosapp.ui.login.LoginViewModel
-import com.example.baosapp.ui.map.MapScreen
-import com.example.baosapp.ui.map.MapViewModel
+import com.example.baosapp.ui.filter.FilterScreen
+import com.example.baosapp.ui.filter.FilterViewModel
+import com.example.baosapp.ui.filter.FilterViewModelFactory
 import com.example.baosapp.ui.favorites.FavoritesScreen
 import com.example.baosapp.ui.favorites.FavoritesViewModel
 import com.example.baosapp.ui.favorites.FavoritesViewModelFactory
-import com.example.baosapp.ui.review.RateBathroomScreen
-import com.example.baosapp.ui.review.RateBathroomViewModel
 import com.example.baosapp.ui.information.InformationScreen
+import com.example.baosapp.ui.login.LoginScreen
+import com.example.baosapp.ui.login.LoginViewModel
 import com.example.baosapp.ui.login.RegisterScreen
 import com.example.baosapp.ui.login.RegisterViewModel
+import com.example.baosapp.ui.map.MapScreen
+import com.example.baosapp.ui.map.MapViewModel
 import com.example.baosapp.ui.map.MapViewModelFactory
+import com.example.baosapp.ui.review.RateBathroomScreen
+import com.example.baosapp.ui.review.RateBathroomViewModel
 import com.example.baosapp.ui.review.RateBathroomViewModelFactory
 import com.example.baosapp.ui.shared.SharedToiletViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavGraph(
     navController: NavHostController
 ) {
     val context = LocalContext.current
-    // ViewModel compartido para pasar el Toilet seleccionado
     val sharedVM: SharedToiletViewModel = viewModel()
 
-    // Observamos si hay un token guardado
     val loggedIn by SessionManager
         .isLoggedIn(context)
         .collectAsState(initial = false)
 
-    // Elegimos la pantalla inicial según el estado de login
     val startDestination = if (loggedIn) Destinations.MAP else Destinations.LOGIN
 
-    val favoritesRepo  = FavoritesRepository(context)
-    val coroutineScope = rememberCoroutineScope()
-
-
     NavHost(
-        navController    = navController,
+        navController = navController,
         startDestination = startDestination
     ) {
-        // Pantalla de login
+        // ---------------------------
+        // Pantallas “normales”
+        // ---------------------------
         composable(Destinations.LOGIN) {
             val loginVm: LoginViewModel = viewModel()
             LoginScreen(
-                viewModel            = loginVm,
-                onLoginSuccess       = {
+                viewModel = loginVm,
+                onLoginSuccess = {
                     navController.navigate(Destinations.MAP) {
                         popUpTo(Destinations.LOGIN) { inclusive = true }
                     }
@@ -73,54 +75,46 @@ fun AppNavGraph(
                 }
             )
         }
+
         composable(Destinations.REGISTER) {
             val registerVm: RegisterViewModel = viewModel()
             RegisterScreen(
-                viewModel         = registerVm,
+                viewModel = registerVm,
                 onRegisterSuccess = {
-                    // tras registro volvemos a LOGIN
                     navController.popBackStack(Destinations.LOGIN, false)
                 },
-                onBackToLogin     = {
+                onBackToLogin = {
                     navController.popBackStack()
                 }
             )
         }
 
-        // Pantalla de mapa
         composable(Destinations.MAP) {
-            val context = LocalContext.current
             val mapVm: MapViewModel = viewModel(
                 factory = MapViewModelFactory(context)
             )
-
             MapScreen(
-                viewModel        = mapVm,
-                modifier         = Modifier.fillMaxSize(),
-                onToggleFavorite = { mapVm.toggleFavorite(it) },
-                onReviewClick    = { toilet ->
+                viewModel = mapVm,
+                modifier = Modifier.fillMaxSize(),
+                onToggleFavorite = { toilet -> mapVm.toggleFavorite(toilet) },
+                onReviewClick = { toilet ->
                     sharedVM.select(toilet)
                     navController.navigate(Destinations.RATE_BATHROOM)
                 },
-                onInfoClick      = { toilet ->
+                onInfoClick = { toilet ->
                     sharedVM.select(toilet)
                     navController.navigate(Destinations.INFORMATION)
                 }
             )
         }
 
-
-        // Pantalla de favoritos
-        // dentro de NavHost { … }
-
         composable(Destinations.FAVORITES) {
             val favVm: FavoritesViewModel = viewModel(
-                factory = FavoritesViewModelFactory(LocalContext.current)
+                factory = FavoritesViewModelFactory(context)
             )
             FavoritesScreen(
-                viewModel     = favVm,
+                viewModel = favVm,
                 onLocateClick = { toilet ->
-                    // seleccionamos el toilet y navegamos al mapa
                     sharedVM.select(toilet)
                     navController.navigate(Destinations.MAP)
                 },
@@ -128,53 +122,90 @@ fun AppNavGraph(
                     sharedVM.select(toilet)
                     navController.navigate(Destinations.RATE_BATHROOM)
                 },
-                onInfoClick   = { toilet ->
+                onInfoClick = { toilet ->
                     sharedVM.select(toilet)
                     navController.navigate(Destinations.INFORMATION)
                 }
             )
         }
 
-
-        // Pantalla para valorar un baño
         composable(Destinations.RATE_BATHROOM) {
             val reviewVm: RateBathroomViewModel = viewModel(
-                factory = RateBathroomViewModelFactory(LocalContext.current)
+                factory = RateBathroomViewModelFactory(context)
             )
             val selected by sharedVM.selectedToilet.collectAsState(initial = null)
             selected?.let { toilet ->
                 RateBathroomScreen(
-                    toiletId        = toilet.id,
-                    toiletName      = toilet.name,
-                    viewModel       = reviewVm,
+                    toiletId = toilet.id,
+                    toiletName = toilet.name,
+                    viewModel = reviewVm,
                     onSubmitSuccess = { navController.popBackStack() }
                 )
             }
         }
 
-        // Pantalla de información detallada
         composable(Destinations.INFORMATION) {
             val selectedToilet by sharedVM.selectedToilet.collectAsState(initial = null)
             InformationScreen(toilet = selectedToilet)
         }
 
-        composable(Destinations.CREATE) {
-            val factory = CreateToiletViewModelFactory(LocalContext.current)
-            val createVm: CreateToiletViewModel = viewModel(factory = factory)
+        // ---------------------------
+        // Destinations.CREATE como Bottom Sheet
+        // ---------------------------
 
-            CreateToiletScreen(
-                viewModel = createVm,
-                onCreated = {
-                    // Por ejemplo, volvemos atrás en el NavStack:
+        composable(Destinations.CREATE) {
+            // Creamos el estado para el ModalBottomSheet
+            val sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true // evita estado “semi abierto”
+            )
+
+            // Instanciamos el ViewModel con Context (no con Application)
+            val createVm: CreateToiletViewModel = viewModel(
+                factory = CreateToiletViewModelFactory(context)
+            )
+
+            // ModalBottomSheet con containerColor = Color(0xFF64B5F6)
+            ModalBottomSheet(
+                onDismissRequest = {
                     navController.popBackStack()
                 },
-                onCloseSheet = {
-                    // Como la pantalla no es realmente un sheet aquí,
-                    // podrías simplemente volver al MAP:
-                    navController.popBackStack()
-                }
-            )
+                sheetState     = sheetState,
+                containerColor = Color(0xFF547792)  // <-- fondo del sheet en azul claro medio
+            ) {
+                CreateToiletScreen(
+                    viewModel    = createVm,
+                    onCreated    = { /* se cierra en el mismo efecto de UIState */ },
+                    onCloseSheet = { navController.popBackStack() },
+                    modifier     = Modifier.fillMaxWidth()
+                )
+            }
         }
 
+        // ---------------------------
+        // Destinations.FILTER (pantalla de filtros)
+        // ---------------------------
+        composable(Destinations.FILTER) {
+            val filterVm: FilterViewModel = viewModel(
+                factory = FilterViewModelFactory(context.applicationContext as Application)
+            )
+            FilterScreen(
+                viewModel = filterVm,
+                onSelectToilet = { toilet ->
+                    sharedVM.select(toilet)
+                    navController.navigate(Destinations.INFORMATION)
+                },
+                onBack = { navController.popBackStack() },
+                onToggleFavorite = { /* dentro de FilterScreen ya lo llama a viewModel.toggleFavorite */ },
+                onReviewClick = { toilet ->
+                    sharedVM.select(toilet)
+                    navController.navigate(Destinations.RATE_BATHROOM)
+                },
+                onInfoClick = { toilet ->
+                    sharedVM.select(toilet)
+                    navController.navigate(Destinations.INFORMATION)
+                },
+                onLocateClick = { /* opcional: centrar mapa */ }
+            )
+        }
     }
 }
