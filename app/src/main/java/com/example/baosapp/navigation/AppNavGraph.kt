@@ -4,7 +4,6 @@ package com.example.baosapp.navigation
 import android.app.Application
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -12,12 +11,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.baosapp.data.local.SessionManager
+import com.example.baosapp.ui.contributions.ContributionsScreen
+import com.example.baosapp.ui.contributions.ContributionsViewModel
+import com.example.baosapp.ui.contributions.ContributionsViewModelFactory
 import com.example.baosapp.ui.create.CreateToiletScreen
 import com.example.baosapp.ui.create.CreateToiletViewModel
 import com.example.baosapp.ui.create.CreateToiletViewModelFactory
@@ -45,8 +46,12 @@ import com.example.baosapp.ui.shared.SharedToiletViewModel
 fun AppNavGraph(
     navController: NavHostController
 ) {
+    val application = LocalContext.current.applicationContext as Application
     val context = LocalContext.current
     val sharedVM: SharedToiletViewModel = viewModel()
+    val userId by SessionManager
+        .getUserId(context)
+        .collectAsState(initial = 0L)
 
     val loggedIn by SessionManager
         .isLoggedIn(context)
@@ -169,14 +174,14 @@ fun AppNavGraph(
                 onDismissRequest = {
                     navController.popBackStack()
                 },
-                sheetState     = sheetState,
+                sheetState = sheetState,
                 containerColor = Color(0xFF547792)  // <-- fondo del sheet en azul claro medio
             ) {
                 CreateToiletScreen(
-                    viewModel    = createVm,
-                    onCreated    = { /* se cierra en el mismo efecto de UIState */ },
+                    viewModel = createVm,
+                    onCreated = { /* se cierra en el mismo efecto de UIState */ },
                     onCloseSheet = { navController.popBackStack() },
-                    modifier     = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -207,5 +212,17 @@ fun AppNavGraph(
                 onLocateClick = { /* opcional: centrar mapa */ }
             )
         }
+        composable(route = Destinations.MY_CONTRIBUTIONS) {
+            // Creamos el ViewModel usando siempre el valor (0L si no ha cargado aún)
+            val vm: ContributionsViewModel = viewModel(
+                factory = ContributionsViewModelFactory(context, userId)
+            )
+            ContributionsScreen(
+                viewModel      = vm,
+                onDeleteToilet = { tmId -> vm.deleteToilet(tmId) },
+                onDeleteReview = { tId, rId -> vm.deleteReview(tId, rId) }
+            )
+        }
     }
 }
+

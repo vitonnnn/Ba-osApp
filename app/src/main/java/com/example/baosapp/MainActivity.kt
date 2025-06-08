@@ -45,18 +45,23 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     topBar = {
-                        TopBarView(onClickSignOut = {
-                            lifecycleScope.launch {
-                                SessionManager.clearToken(this@MainActivity)
-                                startActivity(
-                                    Intent(this@MainActivity, LoginActivity::class.java)
-                                        .apply {
+                        TopBarView(
+                            onClickSignOut = {
+                                lifecycleScope.launch {
+                                    SessionManager.clearToken(this@MainActivity)
+                                    startActivity(
+                                        Intent(this@MainActivity, LoginActivity::class.java).apply {
                                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                                         }
-                                )
-                                finish()
+                                    )
+                                    finish()
+                                }
+                            },
+                            onMyContributionsClick = {
+                                navController.navigate(Destinations.MY_CONTRIBUTIONS)
                             }
-                        })
+                        )
+
                     },
                     bottomBar = {
                         BottomBarView(
@@ -85,7 +90,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TopBarView(
     onClickSignOut: () -> Unit,
-    onSearchClick: () -> Unit = {} // Por defecto no hace nada
+    onMyContributionsClick: () -> Unit = {}
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -104,13 +109,28 @@ fun TopBarView(
             }
             DropdownMenu(
                 expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
+                onDismissRequest = { menuExpanded = false },
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
+                DropdownMenuItem(
+                    text = { Text("Mis contribuciones") },
+                    onClick = {
+                        menuExpanded = false
+                        onMyContributionsClick()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Star, contentDescription = "Contribuciones")
+                    }
+                )
+                Divider()
                 DropdownMenuItem(
                     text = { Text("Cerrar sesión") },
                     onClick = {
                         menuExpanded = false
                         onClickSignOut()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Settings, contentDescription = "Cerrar sesión")
                     }
                 )
             }

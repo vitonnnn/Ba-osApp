@@ -9,4 +9,5 @@ object Destinations {
     const val INFORMATION    = "information"
     const val CREATE = "create"
     const val FILTER = "filter"
+    const val MY_CONTRIBUTIONS = "my_contributions"
 }

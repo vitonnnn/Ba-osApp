@@ -9,7 +9,15 @@ data class ReviewResponse(
     @Json(name = "user_id")
     val userId: Long,
 
-    // <-- Nuevo campo para el nombre de usuario
+    // Este es el que faltaba:
+    @Json(name = "toiletId")
+    val toiletId: Long,
+
+    // Si quieres mostrar también el nombre del baño:
+    @Json(name = "toiletName")
+    val toiletName: String,
+
+    // Ya tenías esto:
     val username: String,
 
     val valoracion: Int,
@@ -18,5 +26,5 @@ data class ReviewResponse(
     val comment: String,
 
     @Json(name = "created_at")
-    val createdAt: String?   // <- lo convertimos en nullable
+    val createdAt: String?
 )

@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 
 class MapViewModel(
     context: Context
+
 ) : ViewModel() {
 
     private val toiletRepo    = ToiletRepository(context)               // tu repo de listToilets()
@@ -28,7 +29,7 @@ class MapViewModel(
 
     // MapViewModel.kt, añade import android.util.Log
     // app/src/main/java/com/example/baosapp/ui/map/MapViewModel.kt
-    private fun loadAll() {
+     fun loadAll() {
         viewModelScope.launch {
             _uiState.value = MapUiState(isLoading = true)
             try {

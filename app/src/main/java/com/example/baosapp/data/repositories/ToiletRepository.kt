@@ -15,7 +15,7 @@ class ToiletRepository(
     private val context: Context
 ) {
     private val apiService by lazy { RetrofitClient.create(context) }
-    /** Devuelve la lista completa de baños o lanza excepción en caso de error */
+
     suspend fun getAllToilets(): List<Toilet> {
         val resp = apiService.listToilets()
         if (resp.isSuccessful) {
@@ -24,7 +24,6 @@ class ToiletRepository(
         throw HttpException(resp)
     }
 
-    /** Devuelve los detalles de un baño concreto */
     suspend fun getToiletById(id: Long): Toilet {
         val resp = apiService.getToilet(id)
         if (resp.isSuccessful) {
@@ -33,7 +32,6 @@ class ToiletRepository(
         throw HttpException(resp)
     }
 
-    /** Publica una reseña para el baño con id [toiletId] */
     suspend fun submitReview(toiletId: Long, review: ReviewRequest): ReviewResponse {
         val resp = apiService.postReview(toiletId, review)
         if (resp.isSuccessful) {
@@ -51,7 +49,6 @@ class ToiletRepository(
         mixto: Boolean,
         cambioBebes: Boolean
     ): ToiletResponse = withContext(Dispatchers.IO) {
-        // Construye el objeto de petición según el modelo Moshi
         val requestBody = CreateToiletRequest(
             name = name,
             latitude = latitude,
@@ -69,6 +66,11 @@ class ToiletRepository(
             throw HttpException(resp)
         }
     }
+
+
+
+
+
     suspend fun getNearbyToilets(
         lat: Double,
         lon: Double,

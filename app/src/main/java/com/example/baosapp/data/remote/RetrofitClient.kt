@@ -12,7 +12,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.50:5000/"
+    private const val BASE_URL = "http://192.168.1.47:5000/"
 
     fun create(context: Context): ApiService {
         // Interceptor que añade el JWT en Authorization

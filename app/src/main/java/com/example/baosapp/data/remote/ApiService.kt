@@ -1,5 +1,6 @@
 package com.example.baosapp.data.remote
 
+import ContributionsResponse
 import com.appbanos.data.model.auth.LoginRequest
 import com.appbanos.data.model.auth.LoginResponse
 import com.example.baosapp.data.model.auth.RegisterRequest
@@ -64,7 +65,7 @@ interface ApiService {
     ): Response<List<ReviewResponse>>
 
     @GET("favorites")
-    suspend fun listFavorites(): Response<List<FavoriteResponse>>
+    suspend fun listFavorites(): Response<List<Toilet>>
 
     @POST("favorites")
     suspend fun addFavorite(@Body request: FavoriteRequest): Response<MessageResponse>
@@ -72,23 +73,19 @@ interface ApiService {
     @DELETE("favorites/{toilet_id}")
     suspend fun removeFavorite(@Path("toilet_id") toiletId: Long): Response<MessageResponse>
 
-    @GET("toilets/my")
-    suspend fun getMyToilets(): Response<List<Toilet>>
+    @GET("users/{u_id}/contributions")
+    suspend fun getContributions(
+        @Path("u_id") userId: Long
+    ): Response<ContributionsResponse>
 
-    // 2) Borrar un baño (solo propietario)
     @DELETE("toilets/{id}")
     suspend fun deleteToilet(
         @Path("id") toiletId: Long
-    ): Response<Void>
+    ): Response<MessageResponse>
 
-    // 3) “Mis reseñas”
-    @GET("reviews/my")
-    suspend fun getMyReviews(): Response<List<ReviewResponse>>
-
-    // 4) Borrar reseña (requiere Authorization)
     @DELETE("toilets/{t_id}/reviews/{r_id}")
     suspend fun deleteReview(
         @Path("t_id") toiletId: Long,
         @Path("r_id") reviewId: Long
-    ): Response<Void>
+    ): Response<MessageResponse>
 }

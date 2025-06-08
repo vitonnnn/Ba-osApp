@@ -8,10 +8,11 @@ data class ToiletResponse(
     val name: String,
     val latitude: Double,
     val longitude: Double,
-    @SerializedName("avg_rating")               // ← aquí mapeas "avg_rating"
+    @SerializedName("avg_rating")
     val avgrating: Double,
     val accesible: Boolean,
     val publico: Boolean,
     val mixto: Boolean,
-    val cambiobebes: Boolean
+    val cambiobebes: Boolean,
+    val userId: Long
 )

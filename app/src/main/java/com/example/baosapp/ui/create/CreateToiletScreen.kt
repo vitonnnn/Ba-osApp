@@ -5,26 +5,19 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.location.Location
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.material3.Switch
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.baosapp.ui.map.MapViewModel
+import com.example.baosapp.ui.map.MapViewModelFactory
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -39,16 +32,19 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CreateToiletScreen(
+
     viewModel: CreateToiletViewModel,
     onCreated: () -> Unit,
     onCloseSheet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val mapViewModel: MapViewModel = viewModel(factory = MapViewModelFactory(LocalContext.current))
+
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // 1) Pedir permisos de ubicación
+    // Permisos de ubicación
     val permissionsState = rememberMultiplePermissionsState(
         listOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -60,48 +56,42 @@ fun CreateToiletScreen(
     }
     val hasLocationPermission = permissionsState.allPermissionsGranted
 
-    // 2) FusedLocationProviderClient para última ubicación
     val fusedClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
-    // 3) Estado para la posición de la cámara (mapa)
     var cameraPositionState by remember {
         mutableStateOf(
             CameraPositionState(
-                position = CameraPosition.fromLatLngZoom(
-                    LatLng(0.0, 0.0), 15f
-                )
+                position = CameraPosition.fromLatLngZoom(LatLng(0.0, 0.0), 15f)
             )
         )
     }
 
-    // 4) Cuando tenemos permiso, obtenemos última ubicación y centramos el mapa
     LaunchedEffect(hasLocationPermission) {
         if (hasLocationPermission && uiState.latitude == null) {
-            fusedClient.lastLocation
-                .addOnSuccessListener { loc: Location? ->
-                    loc?.let {
-                        viewModel.onLocationObtained(it.latitude, it.longitude)
-                        val pos = LatLng(it.latitude, it.longitude)
-                        cameraPositionState = CameraPositionState(
-                            position = CameraPosition.fromLatLngZoom(pos, 15f)
+            fusedClient.lastLocation.addOnSuccessListener { loc: Location? ->
+                loc?.let {
+                    viewModel.onLocationObtained(it.latitude, it.longitude)
+                    cameraPositionState = CameraPositionState(
+                        position = CameraPosition.fromLatLngZoom(
+                            LatLng(it.latitude, it.longitude), 15f
                         )
-                    }
+                    )
                 }
+            }
         }
     }
 
-    // 5) Detectar creación exitosa
     if (uiState.success) {
         LaunchedEffect(Unit) {
             viewModel.resetSuccess()
             Toast.makeText(context, "Baño creado correctamente", Toast.LENGTH_SHORT).show()
-            onCreated()
-            onCloseSheet()
+            mapViewModel.loadAll()  // ✅ ejecuta la recarga directamente
+            onCreated()             // ✅ notifica que fue creado (si quieres hacer algo más)
+            onCloseSheet()          // ✅ cierra el sheet
         }
     }
 
-    // 6) Mostrar Toast de error si existe
     uiState.errorMessage?.let { msg ->
         LaunchedEffect(msg) {
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
@@ -109,11 +99,9 @@ fun CreateToiletScreen(
         }
     }
 
-    // 7) Composición principal sin usar LazyColumn, para que el mapa no capture scroll externo
     Column(
         modifier = modifier
             .fillMaxWidth()
-             // Solo section abajo, el mapa no se mueve con esto
             .background(
                 color = MaterialTheme.colorScheme.secondary,
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
@@ -121,12 +109,9 @@ fun CreateToiletScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Arrastrador visual
-
-        // Campo de nombre
         OutlinedTextField(
             value = uiState.nombre,
-            onValueChange = { viewModel.onNombreChange(it) },
+            onValueChange = viewModel::onNombreChange,
             label = { Text("Nombre del baño") },
             singleLine = true,
             colors = outlinedTextFieldColors(
@@ -139,17 +124,11 @@ fun CreateToiletScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // -------------------------
-        // 8) Mapa con tamaño fijo (no dentro del scroll)
-        // -------------------------
         if (hasLocationPermission) {
             val currentLatLng = uiState.latitude?.let { lat ->
-                uiState.longitude?.let { lng ->
-                    LatLng(lat, lng)
-                }
+                uiState.longitude?.let { lng -> LatLng(lat, lng) }
             }
 
-            // Box de altura fija para el mapa, sin que el scroll mueva el mapa
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -159,14 +138,10 @@ fun CreateToiletScreen(
                 GoogleMap(
                     modifier = Modifier.matchParentSize(),
                     cameraPositionState = cameraPositionState,
-                    uiSettings = MapUiSettings(
-                        zoomControlsEnabled = true,
-                        myLocationButtonEnabled = false
-                    ),
+                    uiSettings = MapUiSettings(zoomControlsEnabled = true),
                     properties = MapProperties(isMyLocationEnabled = true),
                     onMapClick = { latLng ->
                         viewModel.onLocationObtained(latLng.latitude, latLng.longitude)
-                        // Animate cámara en coroutine
                         coroutineScope.launch {
                             cameraPositionState.animate(
                                 update = CameraUpdateFactory.newLatLng(latLng),
@@ -184,20 +159,17 @@ fun CreateToiletScreen(
                 }
             }
 
-            // Mostrar coords debajo del mapa
             currentLatLng?.let { pos ->
                 Text(
                     text = "Ubicación: ${"%.5f".format(pos.latitude)}, ${"%.5f".format(pos.longitude)}",
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(start = 8.dp)
                 )
-            } ?: run {
-                Text(
-                    text = "Toca el mapa para seleccionar ubicación.",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-            }
+            } ?: Text(
+                text = "Toca el mapa para seleccionar ubicación.",
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 8.dp)
+            )
         } else {
             Text(
                 text = "Permite ubicación para seleccionar posición en mapa",
@@ -206,63 +178,13 @@ fun CreateToiletScreen(
             )
         }
 
-        // 9) Switches de atributos (estas filas quedan dentro del scroll)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Accesible", modifier = Modifier.weight(1f))
-            Switch(
-                checked = uiState.accesible,
-                onCheckedChange = { viewModel.onAccesibleChange(it) },
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Público", modifier = Modifier.weight(1f))
-            Switch(
-                checked = uiState.publico,
-                onCheckedChange = { viewModel.onPublicoChange(it) },
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Mixto", modifier = Modifier.weight(1f))
-            Switch(
-                checked = uiState.mixto,
-                onCheckedChange = { viewModel.onMixtoChange(it) },
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Cambio bebés", modifier = Modifier.weight(1f))
-            Switch(
-                checked = uiState.cambioBebes,
-                onCheckedChange = { viewModel.onCambioBebesChange(it) },
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
+        AttributeSwitch("Accesible", uiState.accesible, viewModel::onAccesibleChange)
+        AttributeSwitch("Público", uiState.publico, viewModel::onPublicoChange)
+        AttributeSwitch("Mixto", uiState.mixto, viewModel::onMixtoChange)
+        AttributeSwitch("Cambio bebés", uiState.cambioBebes, viewModel::onCambioBebesChange)
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 10) Botón Crear baño
         Button(
             onClick = { viewModel.createToilet() },
             enabled = uiState.nombre.isNotBlank()
@@ -289,12 +211,28 @@ fun CreateToiletScreen(
             }
         }
 
-        // 11) Botón Cerrar sheet
         TextButton(
             onClick = onCloseSheet,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text("< Cancelar")
         }
+    }
+}
+
+@Composable
+private fun AttributeSwitch(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(label, modifier = Modifier.weight(1f))
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MaterialTheme.colorScheme.primary
+            )
+        )
     }
 }
