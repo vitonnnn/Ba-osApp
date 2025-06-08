@@ -2,12 +2,20 @@ package com.example.baosapp.ui.review
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.baosapp.data.model.review.Review
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import com.example.baosapp.data.model.review.ReviewRequest
+import com.example.baosapp.data.repositories.ToiletRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class RateBathroomViewModel : ViewModel() {
+/**
+ * ViewModel para manejar la lógica de envío de reseñas.
+ */
+class RateBathroomViewModel(
+    private val repo: ToiletRepository
+) : ViewModel() {
 
     private val _rating = MutableStateFlow(0)
     val rating: StateFlow<Int> = _rating
@@ -27,50 +35,38 @@ class RateBathroomViewModel : ViewModel() {
     private val _submissionSuccess = MutableSharedFlow<Unit>()
     val submissionSuccess: SharedFlow<Unit> = _submissionSuccess
 
-    /** Establece la valoración global (1..5) */
     fun setRating(value: Int) {
         if (value in 1..5) _rating.value = value
     }
 
-    /** Establece la limpieza (1..5) */
     fun setLimpieza(value: Int) {
         if (value in 1..5) _limpieza.value = value
     }
 
-    /** Establece el olor (1..5) */
     fun setOlor(value: Int) {
         if (value in 1..5) _olor.value = value
     }
 
-    /** Establece el comentario */
     fun setComment(text: String) {
         _comment.value = text
     }
 
     /**
-     * Simula el envío de una reseña.
-     * @param nombreBano Nombre del baño a reseñar.
+     * Envía una reseña al servidor usando un ReviewRequest.
+     * @param toiletId Id del baño a reseñar.
+     * @param review    Request que contiene rating, limpieza, olor y comentario.
      */
-    fun submitReview(nombreBano: String) {
-        // Validar que haya puntuaciones
-        if (_rating.value == 0 || _limpieza.value == 0 || _olor.value == 0) return
-
+    fun submitReview(toiletId: Long, review: ReviewRequest) {
         viewModelScope.launch {
             _isSubmitting.value = true
-            delay(1_000) // Simula llamada a red/repositorio
-
-            // Construir el objeto Review
-            val review = Review(
-                id = System.currentTimeMillis(),
-                nombreBano = nombreBano,
-                valoracion = _rating.value,
-                limpieza   = _limpieza.value,
-                olor       = _olor.value
-            )
-            // TODO: enviar `review` al repositorio
-
-            _isSubmitting.value = false
-            _submissionSuccess.emit(Unit)
+            try {
+                repo.submitReview(toiletId, review)
+                _submissionSuccess.emit(Unit)
+            } catch (e: Exception) {
+                // manejar error si lo deseas
+            } finally {
+                _isSubmitting.value = false
+            }
         }
     }
 }

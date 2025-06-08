@@ -13,6 +13,7 @@ private val LightColorScheme = lightColorScheme(
     onSecondary = AccentCream,
     onBackground= AccentCream,
     onSurface = DarkBlue
+
 )
 
 @Composable
@@ -21,7 +22,7 @@ fun BañosAppTheme(
 ) {
     MaterialTheme(
         colorScheme = LightColorScheme,
-        typography = Typography,     // si ya tienes tu Typography definido
+        typography = AppTypography,     // si ya tienes tu Typography definido
         content = content
     )
 }

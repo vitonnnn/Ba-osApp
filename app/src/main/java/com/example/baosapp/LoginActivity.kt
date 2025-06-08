@@ -1,17 +1,14 @@
-// app/src/main/java/com/example/baosapp/ui/login/LoginActivity.kt
-package com.example.baosapp.ui.login
+// app/src/main/java/com/example/baosapp/LoginActivity.kt
+package com.example.baosapp
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Modifier
-import com.example.baosapp.MainActivity
-import com.example.baosapp.ui.login.LoginScreen
+import androidx.activity.viewModels
+import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.baosapp.ui.login.*
 import com.example.baosapp.ui.theme.BañosAppTheme
 
 class LoginActivity : ComponentActivity() {
@@ -19,22 +16,39 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            BañosAppTheme  {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
+            BañosAppTheme {
+                // Controla si mostramos login o register
+                var showRegister by remember { mutableStateOf(false) }
+
+                if (showRegister) {
+                    // Pantalla de registro
+                    val registerVm: RegisterViewModel = viewModel()
+                    RegisterScreen(
+                        viewModel         = registerVm,
+                        onRegisterSuccess = {
+                            // Tras registrarse, volvemos al login
+                            showRegister = false
+                        },
+                        onBackToLogin     = {
+                            showRegister = false
+                        }
+                    )
+                } else {
+                    // Pantalla de login
+                    val loginVm: LoginViewModel = viewModel()
                     LoginScreen(
-                        onLoginSuccess = { navigateToMain() }
+                        viewModel            = loginVm,
+                        onLoginSuccess       = {
+                            // Al hacer login correcto, lanzamos MainActivity
+                            startActivity(Intent(this, MainActivity::class.java))
+                            finish()
+                        },
+                        onNavigateToRegister = {
+                            showRegister = true
+                        }
                     )
                 }
             }
         }
-    }
-
-    private fun navigateToMain() {
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()  // Evita volver al login con el botón atrás
     }
 }

@@ -2,85 +2,125 @@
 package com.example.baosapp.ui.review
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ContentAlpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.baosapp.data.model.review.ReviewRequest
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RateBathroomScreen(
-    nombreBano: String,
-    viewModel: RateBathroomViewModel,
+    toiletId: Long,
+    toiletName: String,
     onSubmitSuccess: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: RateBathroomViewModel = viewModel(
+        factory = RateBathroomViewModelFactory(LocalContext.current)
+    )
 ) {
     val rating       by viewModel.rating.collectAsState()
     val limpieza     by viewModel.limpieza.collectAsState()
     val olor         by viewModel.olor.collectAsState()
-    val comment      by viewModel.comment.collectAsState()
+    val comentario   by viewModel.comment.collectAsState()
     val isSubmitting by viewModel.isSubmitting.collectAsState()
 
-    // Observa el evento de éxito
+    // Cuando la review se sube con éxito, volvemos atrás
     LaunchedEffect(Unit) {
-        viewModel.submissionSuccess.collectLatest {
-            onSubmitSuccess()
-        }
+        viewModel.submissionSuccess.collectLatest { onSubmitSuccess() }
     }
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Text("Valorar baño: $nombreBano", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
+        Text(
+            text  = "Valorar baño: $toiletName",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
 
-        Text("Valoración general", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text  = "Valoración general",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
         RatingRow(current = rating, onRatingSelected = viewModel::setRating)
 
-        Text("Limpieza", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text  = "Limpieza",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
         RatingRow(current = limpieza, onRatingSelected = viewModel::setLimpieza)
 
-        Text("Olor", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text  = "Olor",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
         RatingRow(current = olor, onRatingSelected = viewModel::setOlor)
 
-        Text("Comentario", style = MaterialTheme.typography.titleMedium)
         OutlinedTextField(
-            value = comment,
+            value         = comentario,
             onValueChange = viewModel::setComment,
-            placeholder = { Text("Escribe tu opinión...", color = Color.Gray) },
+            textStyle     = TextStyle(color = Color.Black),
+            placeholder   = {
+                Text(
+                    text  = "Comentario (opcional)",
+                    color = Color.Black.copy(alpha = ContentAlpha.medium)
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(120.dp),
-            textStyle = TextStyle(color = Color.Black),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                cursorColor          = MaterialTheme.colorScheme.onSurface
-            ),
-            singleLine = false
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                cursorColor = Color.Black
+            )
         )
 
-        Spacer(modifier = Modifier.weight(1f))
-
         Button(
-            onClick = { viewModel.submitReview(nombreBano) },
+            onClick = {
+                viewModel.submitReview(
+                    toiletId,
+                    ReviewRequest(
+                        valoracion = rating,
+                        limpieza   = limpieza,
+                        olor       = olor,
+                        comment    = comentario
+                    )
+                )
+            },
             enabled = rating > 0 && limpieza > 0 && olor > 0 && !isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (isSubmitting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
             } else {
                 Text("Enviar valoración")
             }
@@ -93,22 +133,17 @@ private fun RatingRow(
     current: Int,
     onRatingSelected: (Int) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         (1..5).forEach { star ->
             IconButton(onClick = { onRatingSelected(star) }) {
-                if (star <= current) {
-                    Icon(
-                        Icons.Filled.Star,
-                        contentDescription = "$star estrellas",
-                        tint = Color.Black
-                    )
-                } else {
-                    Icon(
-                        Icons.Outlined.Star,
-                        contentDescription = "$star estrellas",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Icon(
+                    imageVector = if (star <= current) Icons.Filled.Star else Icons.Outlined.Star,
+                    contentDescription = null,
+                    tint = if (star <= current)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
